@@ -1,8 +1,8 @@
 # EDAP
 #Efficient Dynamic Algorithms for hash generations and testing
-#We work on fixed length inputs , the more inputs the better the generations
-#Usage:
-# $ python EDAP.py <inputfilename.txt> <number of hashes to generate>
+We work on fixed length inputs , the more inputs the better the generations
+Usage:
+ $ python EDAP.py <inputfilename.txt> <number of hashes to generate>
 
 
 ehabs-MacBook-Pro:OhHaithere obzy$ wc -l test.txt ; head -n 3 test.txt 
