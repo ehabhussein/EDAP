@@ -304,28 +304,21 @@ class Probability():
             self.counter +=1
             if self.counter == int(argv[2]):
                 break
-            #self.newWord.append("")
-            if self.counter % 1000000 == 0:
-                print self.counter
             self.genWord = ''
             for i in range(len(self.unusedindexes)):
                 self.genWord += (random.choice(self._charRelationMatrix[i].keys()))
-            hosts.append(self.genWord)
+           # hosts.append(self.genWord)
             if self.genWord in self.strippedReadWords:
                 print "Found word:", self.genWord
-                break
             else:
-                continue
-                self.newWord[l] += (random.choice(self._charRelationMatrix[i].keys()))
-        print "\n".join(self.newWord)
+                self.newWord.append(self.genWord)
         for word in self.newWord:
+            hosts.append(word)
             print word,
             for i, c in enumerate(word):
                 self.maxweight += self._charRelationMatrix[i][c]
-                print "[", c, ":", self._charRelationMatrix[i][c],"]",
             print "MaxWeight = (", self.maxweight, ")", '\n\n'
             self.maxweight = 0
-
 
     def printgeneralstats(self):
         print "\n\n[+]General Statistics"
