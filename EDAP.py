@@ -3,10 +3,9 @@
 #ahmed@abdelrahman.net
 
 from sys import argv
-
-import time
 import random
 hosts = []
+
 class Probability():
     def __init__(self):
         self.charset = list()
@@ -37,6 +36,19 @@ class Probability():
                 if char not in self.charset:
                     self.charset.append(char)
         self.discardedcharset = self.getdifflist(self.fullkeyboard,self.charset)
+
+    def getcase(self,char):
+                if char.isupper():
+                    return "U"
+                elif char.islower():
+                    return "l"
+                elif char.isdigit():
+                    return "n"
+                elif not char.isupper() and not char.islower() and not char.isdigit():
+                    return "@"
+                else:
+                    pass
+
 
     def getindexes(self):
         print "\n\nKeys: {U = Uppercase, l = Lowercase , n = Integers , @ = symbols}\n\n[+] Finding Character types with positions in each word"
@@ -224,6 +236,63 @@ class Probability():
             if "".join(self.genList) not in hosts:
                 hosts.append("".join(self.genList))
 
+    def patterngenerator(self):
+
+        self.maxweight = 0
+        self.threshold = 0
+        self.firstchoice = ""
+        genIndex = list(range(len(max(self.readwords, key=len).strip())))
+        self.smartDict = dict()
+        self.strippedReadWords = []
+        self.genList = ["" for i in genIndex]
+        self.wordpattern =  self.word_dct.values()
+        for word in self.readwords:
+            word = word.strip()
+            for i,c in enumerate(word):
+                if not self.smartDict.get(c):
+                    self.smartDict[c] = dict()
+                if not self.smartDict[c].get(i):
+                    self.smartDict[c][i] = dict()
+                for ind, ch in enumerate(word):
+                    if not self.smartDict[c][i].get(ind):
+                        self.smartDict[c][i][ind] = set()
+                    self.smartDict[c][i][ind].add(ch)
+        self.randompattern = random.choice(self.wordpattern)
+
+        while not self.firstchoice:
+            indx = random.choice(genIndex)
+            self.firstchoice = random.choice(self._charRelationMatrix[indx].keys())
+            if self.getcase(self.firstchoice)== self.randompattern[indx]:
+                genIndex.remove(indx)
+                self.genList[indx] = self.firstchoice
+            else:
+                self.firstchoice = ""
+
+        while genIndex:
+            self.threshold += 1
+            indx = random.choice(genIndex)
+            randomC = random.choice(self._charRelationMatrix[indx].keys())
+            for i, c in enumerate(self.genList):
+                if c:
+                    if randomC in self.smartDict[c][i][indx] and (self.getcase(randomC) == self.randompattern[indx]):
+
+                        self.maxweight += self._charRelationMatrix[indx][randomC]
+                        self.genList[indx] = randomC
+                        genIndex.remove(indx)
+                        break
+                    else:
+                        if self.threshold == 1000:
+                            return
+                        break
+        for word in self.readwords:
+            self.strippedReadWords.append(word.strip())
+        if "".join(self.genList) in self.strippedReadWords:
+            print "Found word in wordList:", ''.join(self.genList) ,"weight= %d  "%self.maxweight
+        else:
+            print "Found new word:", self.randompattern, ''.join(self.genList) ,"weight= %d  "%self.maxweight
+            if "".join(self.genList) not in hosts:
+                hosts.append("".join(self.genList))
+
     def printgeneralstats(self):
         print "\n\n[+]General Statistics"
         print "Full charset                :",''.join(sorted(self.fullkeyboard))
@@ -269,9 +338,14 @@ if __name__ == '__main__':
     EDA.frequency_index_horizontal()
     EDA.charswithfriendswithwords()
     EDA.PrefinalAnalysis()
-    print "[+] Here are your new strings:(from smart generator)\n"
-    for i in range(int(argv[2])):
-        EDA.smartGenerator()
+    if argv[3] == "smart":
+        print "[+] Here are your new strings:(from smart generator)\n"
+        for i in range(int(argv[2])):
+            EDA.smartGenerator()
+    if argv[3] == "patterns":
+        print "[+] Here are your new strings:(from pattern based generator)\n"
+        for i in range(int(argv[2])):
+            EDA.patterngenerator()
     hosts = list(set(hosts))
-    print "generated:%d"%(len(hosts))
+    print "generated:%d\n\n\n\n\n"%(len(hosts))
     print '\n'.join(hosts)
