@@ -11,7 +11,7 @@ ehabs-MacBook-Pro:OhHaithere obzy$ wc -l test.txt ; head -n 3 test.txt
 P91TKwhEHx4
 X7Q7mimh4iE
 A9g6sYKNlGA
-ehabs-MacBook-Pro:OhHaithere obzy$ python EDAP.py test.txt 10
+ehabs-MacBook-Pro:OhHaithere obzy$ python EDAP.py test.txt 10 smart
 
  ______           _           _     _ _  _
 (_____ \         | |         | |   (_) |(_)  _
