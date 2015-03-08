@@ -237,7 +237,6 @@ class Probability():
                 hosts.append("".join(self.genList))
 
     def patterngenerator(self):
-
         self.maxweight = 0
         self.threshold = 0
         self.firstchoice = ""
@@ -258,7 +257,6 @@ class Probability():
                         self.smartDict[c][i][ind] = set()
                     self.smartDict[c][i][ind].add(ch)
         self.randompattern = random.choice(self.wordpattern)
-
         while not self.firstchoice:
             indx = random.choice(genIndex)
             self.firstchoice = random.choice(self._charRelationMatrix[indx].keys())
@@ -267,7 +265,6 @@ class Probability():
                 self.genList[indx] = self.firstchoice
             else:
                 self.firstchoice = ""
-
         while genIndex:
             self.threshold += 1
             indx = random.choice(genIndex)
@@ -275,7 +272,6 @@ class Probability():
             for i, c in enumerate(self.genList):
                 if c:
                     if randomC in self.smartDict[c][i][indx] and (self.getcase(randomC) == self.randompattern[indx]):
-
                         self.maxweight += self._charRelationMatrix[indx][randomC]
                         self.genList[indx] = randomC
                         genIndex.remove(indx)
@@ -292,6 +288,44 @@ class Probability():
             print "Found new word:", self.randompattern, ''.join(self.genList) ,"weight= %d  "%self.maxweight
             if "".join(self.genList) not in hosts:
                 hosts.append("".join(self.genList))
+
+
+    def randomgenerator(self):
+        print "[+] Here are your new strings:(from random generator)\n"
+        self.tokens = []
+        self.newWord = []
+        self.maxweight = 0
+        self.genWord = ''
+        self.strippedReadWords = []
+        self.counter = 0
+        for word in self.readwords:
+            self.strippedReadWords.append(word.strip())
+        while(True):
+            self.counter +=1
+            if self.counter == int(argv[2]):
+                break
+            #self.newWord.append("")
+            if self.counter % 1000000 == 0:
+                print self.counter
+            self.genWord = ''
+            for i in range(len(self.unusedindexes)):
+                self.genWord += (random.choice(self._charRelationMatrix[i].keys()))
+            hosts.append(self.genWord)
+            if self.genWord in self.strippedReadWords:
+                print "Found word:", self.genWord
+                break
+            else:
+                continue
+                self.newWord[l] += (random.choice(self._charRelationMatrix[i].keys()))
+        print "\n".join(self.newWord)
+        for word in self.newWord:
+            print word,
+            for i, c in enumerate(word):
+                self.maxweight += self._charRelationMatrix[i][c]
+                print "[", c, ":", self._charRelationMatrix[i][c],"]",
+            print "MaxWeight = (", self.maxweight, ")", '\n\n'
+            self.maxweight = 0
+
 
     def printgeneralstats(self):
         print "\n\n[+]General Statistics"
@@ -329,6 +363,14 @@ if __name__ == '__main__':
            Efficient Dynamic Algorithms         (____/
          Ehab Hussein & Ahmed AbdelRahman
 """
+    if len(argv) <4 :
+        print"""
+        Usages:
+        $ python EDAP.py input-file.txt <number of generated hashes> random   [truly random based on charset , length , chars found] [unstrict]
+        $ python EDAP.py input-file.txt <number of generated hashes> smart    [based on input , weight & positions] [strict]
+        $ python EDAP.py input-file.txt <number of generated hashes> patterns [based on smart + char cases] [very strict]
+        """
+        exit()
 
     EDA = Probability()
     EDA.getcharset()
@@ -343,9 +385,11 @@ if __name__ == '__main__':
         for i in range(int(argv[2])):
             EDA.smartGenerator()
     if argv[3] == "patterns":
-        print "[+] Here are your new strings:(from pattern based generator)\n"
+        print "[+] Here are your new strings:(from pattern  smart based generator)\n"
         for i in range(int(argv[2])):
             EDA.patterngenerator()
+    if argv[3] == "random":
+        EDA.randomgenerator()
     hosts = list(set(hosts))
     print "generated:%d\n\n\n\n\n"%(len(hosts))
     print '\n'.join(hosts)
