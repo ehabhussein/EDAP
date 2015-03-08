@@ -1,12 +1,13 @@
 For a more cleaner README
 
- ______           _           _     _ _  _
-(_____ \         | |         | |   (_) |(_)  _
- _____) )___ ___ | |__  _____| |__  _| | _ _| |_ _   _
-|  ____/ ___) _ \|  _ \(____ |  _ \| | || (_   _) | | |
-| |   | |  | |_| | |_) ) ___ | |_) ) | || | | |_| |_| |
-|_|   |_|   \___/|____/\_____|____/|_|\_)_|  \__)\__  |
-                                                (____/
-         Ehab Hussein & Ahmed AbdelRahman
+
+ Usages:
+$ python EDAP.py input-file.txt <number of generated hashes> random   [truly random based on charset , length , chars found] [unstrict]
+
+$ python EDAP.py input-file.txt <number of generated hashes> smart    [based on input , weight & positions] [strict]
+
+$ python EDAP.py input-file.txt <number of generated hashes> patterns [based on smart + char cases] [very strict]
+        
+
 
 https://raw.githubusercontent.com/ehabhussein/EDAP/master/raw_readme
