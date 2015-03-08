@@ -278,6 +278,7 @@ class Probability():
                         break
                     else:
                         if self.threshold == 1000:
+                            print "threshold reached... retrying\n"
                             return
                         break
         for word in self.readwords:
