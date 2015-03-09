@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 #ehab.hussein@ioactive.co.uk ;  @__obzy__
 #ahmed@abdelrahman.net
@@ -272,7 +271,6 @@ class Probability():
                 self.firstchoice = ""
         while genIndex:
             if self.threshold == 1000:
-                    print "threshold reached... retrying\n"
                     return
             self.threshold += 1
             indx = random.choice(genIndex)
