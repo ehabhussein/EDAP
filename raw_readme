@@ -3,7 +3,7 @@
 We work on fixed length inputs , the more inputs the better the generations
 Usage:
 
-$ python EDAP.py
+$ pypy EDAP.py
 
  ______           _           _     _ _  _
 (_____ \         | |         | |   (_) |(_)  _
