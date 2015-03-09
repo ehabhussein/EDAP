@@ -20,7 +20,7 @@ $ pypy EDAP.py input-file.txt <number of generated hashes> patterns [based on sm
         
 ------------------------------------------------------------------------
 
-$ time pypy EDAP.py ../OhHaithere/urls.txt 1000 random
+$ time pypy EDAP.py ls.txt 1000 random
 
 real    0m0.338s
 
@@ -29,7 +29,7 @@ user    0m0.293s
 sys    0m0.039s
 
 
-$ time python EDAP.py ../OhHaithere/urls.txt 1000 random
+$ time python EDAP.py ls.txt 1000 random
 
 real    0m0.099s
 
@@ -39,7 +39,7 @@ sys    0m0.016s
 
 ----------------------------------
 
-$ time pypy EDAP.py ../OhHaithere/urls.txt 1000 smart
+$ time pypy EDAP.py ls.txt 1000 smart
 
 real    0m6.235s
 
@@ -48,7 +48,7 @@ user    0m6.116s
 sys    0m0.113s
 
 
-$ time python EDAP.py ../OhHaithere/urls.txt 1000 smart
+$ time python EDAP.py ls.txt 1000 smart
 
 real    0m20.749s
 
@@ -58,7 +58,7 @@ sys    0m0.118s
 
 ------------------------------------
 
-$ time python EDAP.py ../OhHaithere/urls.txt 1000 patterns
+$ time python EDAP.py ls.txt 1000 patterns
 
 real    0m22.386s
 
@@ -67,7 +67,7 @@ user    0m22.221s
 sys    0m0.160s
 
 
-$ time pypy EDAP.py ../OhHaithere/urls.txt 1000 patterns
+$ time pypy EDAP.py ls.txt 1000 patterns
 
 real    0m6.437s
 
