@@ -1,3 +1,5 @@
+By: Ehab Hussein & Ahmed AbdelRahman
+
 For a more cleaner README and usage examples
 
 https://raw.githubusercontent.com/ehabhussein/EDAP/master/raw_readme
