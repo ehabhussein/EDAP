@@ -1,10 +1,15 @@
 #!/usr/bin/env python
+
 #ehab.hussein@ioactive.co.uk ;  @__obzy__
 #ahmed@abdelrahman.net
 
-from sys import argv
+from sys import argv, exit
+import hashlib
+import base64
 import random
+import zlib
 hosts = []
+customizedList = []
 
 class Probability():
     def __init__(self):
@@ -266,6 +271,9 @@ class Probability():
             else:
                 self.firstchoice = ""
         while genIndex:
+            if self.threshold == 1000:
+                    print "threshold reached... retrying\n"
+                    return
             self.threshold += 1
             indx = random.choice(genIndex)
             randomC = random.choice(self._charRelationMatrix[indx].keys())
@@ -277,9 +285,7 @@ class Probability():
                         genIndex.remove(indx)
                         break
                     else:
-                        if self.threshold == 1000:
-                            print "threshold reached... retrying\n"
-                            return
+
                         break
         for word in self.readwords:
             self.strippedReadWords.append(word.strip())
@@ -320,6 +326,62 @@ class Probability():
                 self.maxweight += self._charRelationMatrix[i][c]
             print "MaxWeight = (", self.maxweight, ")", '\n\n'
             self.maxweight = 0
+
+
+    def customize(self):
+        self.encdec = raw_input("Encrypt/Decrypt? ")[0].lower()
+        if self.encdec == 'e':
+            print "[+]Current supported methods"
+            print "md5 sha1 sha224 sha256 sha384 sha512 adler32 crc32 base64\n"
+            selection = raw_input("Your choice: ")
+            if selection.strip()  == "base64":
+                for i in hosts:
+                    customizedList.append(base64.b64encode(i))
+            elif selection.strip()  == "crc32":
+                sub = raw_input("starting value: default/value? ")[0]
+                if sub == "d":
+                    for i in hosts:
+                        customizedList.append(zlib.crc32(i)&0xFFFFFFFF)
+                elif sub == "v":
+                    value = input("value:")
+                    for i in hosts:
+                        customizedList.append(zlib.crc32(i,value)&0xFFFFFFFF)
+            elif selection.strip()  == "adler32":
+                 sub = raw_input("starting value: default/value? ")[0]
+                 if sub == "d":
+                     for i in hosts:
+                        customizedList.append(zlib.adler32(i)&0xFFFFFFFF)
+                 elif sub == "v":
+                    value = input("value:")
+                    for i in hosts:
+                        customizedList.append(zlib.adler32(i,value)&0xFFFFFFFF)
+            elif selection.strip() == "sha224":
+                for i in hosts:
+                    customizedList.append(hashlib.sha224(i).hexdigest())
+            elif selection.strip() == "sha256":
+                for i in hosts:
+                    customizedList.append(hashlib.sha256(i).hexdigest())
+            elif selection.strip() == "sha384":
+                for i in hosts:
+                    customizedList.append(hashlib.sha384(i).hexdigest())
+            elif selection.strip() == "sha512":
+                for i in hosts:
+                    customizedList.append(hashlib.sha384(i).hexdigest())
+            elif selection.strip() == "sha1":
+                for i in hosts:
+                    customizedList.append(hashlib.sha1(i).hexdigest())
+            elif selection.strip() == "md5":
+                for i in hosts:
+                    md5sum = hashlib.md5()
+                    md5sum.update(i)
+                    customizedList.append(md5sum.hexdigest())
+
+        elif self.encdec == 'd':
+            print "[+]Current supported methods(TODO)\n"
+
+
+
+
 
     def printgeneralstats(self):
         print "\n\n[+]General Statistics"
@@ -386,4 +448,10 @@ if __name__ == '__main__':
         EDA.randomgenerator()
     hosts = list(set(hosts))
     print "generated:%d\n\n\n\n\n"%(len(hosts))
-    print '\n'.join(hosts)
+    print '\n'.join(hosts),"\n\n"
+    try:
+        if argv[4] == "custom":
+         EDA.customize()
+         print '\n'.join(customizedList)
+    except:
+        pass
