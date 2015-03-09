@@ -16,9 +16,9 @@ $ python EDAP.py
 
 
         Usages:
-        $ python EDAP.py input-file.txt <number of generated hashes> random   [truly random based on charset , length , chars found] [unstrict]
-        $ python EDAP.py input-file.txt <number of generated hashes> smart    [based on input , weight & positions] [strict]
-        $ python EDAP.py input-file.txt <number of generated hashes> patterns [based on smart + char cases] [very strict]
+        $ pypy EDAP.py input-file.txt <number of generated hashes> random   [truly random based on charset , length , chars found] [unstrict]
+        $ pypy EDAP.py input-file.txt <number of generated hashes> smart    [based on input , weight & positions] [strict]
+        $ pypy EDAP.py input-file.txt <number of generated hashes> patterns [based on smart + char cases] [very strict]
 
 
 
@@ -28,7 +28,7 @@ P91TKwhEHx4
 X7Q7mimh4iE
 A9g6sYKNlGA
 
-$ python EDAP.py test.txt 10 smart
+$ pypy EDAP.py test.txt 10 smart
 
  ______           _           _     _ _  _
 (_____ \         | |         | |   (_) |(_)  _
