@@ -91,7 +91,7 @@ class Probability():
             len(self.getdifflist(self.unusedindexes,self.alphalowerindexes)) == 0 and \
             len(self.getdifflist(self.unusedindexes,self.integerindexes)) == 0 and \
             len(self.getdifflist(self.unusedindexes,self.nonalphanumindexes)) == 0:
-                print "All indexes have been used by all types of characters.(Truly Random)\n"
+                print "All indexes have been used by all types of characters\n"
         self.finalcharset = self.getdifflist(self.fullkeyboard,self.discardedcharset)
         self.maxcombinationwordsgenerator = len(self.finalcharset) ** len(self.unusedindexes)
 
