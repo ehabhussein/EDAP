@@ -2,6 +2,11 @@ For a more cleaner README and usage examples
 
 https://raw.githubusercontent.com/ehabhussein/EDAP/master/raw_readme
 
+Consider using the pypy interpreter over than the normal python interpreter for optimising speed.
+http://pypy.org
+
+Mac:
+sudo port install pypy
 
  Usages:
  
