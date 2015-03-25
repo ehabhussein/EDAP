@@ -3,10 +3,11 @@
 #ahmed@abdelrahman.net
 
 from sys import argv, exit
-import hashlib
 import base64
+import hashlib
 import random
-import zlib
+import re
+
 hosts = []
 customizedList = []
 
@@ -52,7 +53,6 @@ class Probability():
                     return "@"
                 else:
                     pass
-
 
     def getindexes(self):
         print "\n\nKeys: {U = Uppercase, l = Lowercase , n = Integers , @ = symbols}\n\n[+] Finding Character types with positions in each word"
@@ -312,7 +312,6 @@ class Probability():
             self.genWord = ''
             for i in range(len(self.unusedindexes)):
                 self.genWord += (random.choice(self._charRelationMatrix[i].keys()))
-           # hosts.append(self.genWord)
             if self.genWord in self.strippedReadWords:
                 print "Found word:", self.genWord
             else:
@@ -328,7 +327,7 @@ class Probability():
 
     def customize(self):
         print "[+]Current supported methods"
-        print "md5 sha1 sha224 sha256 sha384 sha512 base64\n"
+        print "md5, sha1, sha224, sha256, sha384, sha512, base64\n"
         selection = raw_input("Your choice: ")
         if selection.strip()  == "base64":
             for i in hosts:
@@ -354,7 +353,65 @@ class Probability():
                 md5sum.update(i)
                 customizedList.append(md5sum.hexdigest())
 
+    def biggerlist(self):
+        if len(hosts)>=len(self.readwords):
+            print "[-] Using the generated list, a possibility of a regex match is greater\n"
+            return hosts
+        else:
+            print "[-] Using the original list, a possibility of a regex match is greater\n"
+            return self.readwords
 
+    def random_regex_generator(self):
+        print "[+] Generating a list of all possible regular expressions."
+        z = ""
+        self.finalcasesregex = list()
+        self.separated_charset = dict()
+        self.build_regex = dict()
+        regexlist = list()
+        self.separated_charset["upper"] = ""
+        self.separated_charset["lower"] = ""
+        self.separated_charset["number"] = ""
+        self.separated_charset["symbol"] = ""
+        for i in self.analysis_dct_h:
+            for q in i:
+                z+= self.getcase(q)
+            self.finalcasesregex.append(z.strip())
+            z= ""
+        self.finalcasesregex = list(set(self.finalcasesregex))
+        for i in self.finalcharset:
+            if self.getcase(i) == "U":
+                self.separated_charset["upper"] += i.strip()
+            elif self.getcase(i) == "l":
+                self.separated_charset["lower"] += i.strip()
+            elif self.getcase(i) == "n":
+                self.separated_charset["number"] += i.strip()
+            elif self.getcase(i) == "@":
+                self.separated_charset["symbol"] += i.strip()
+        upperregex = "["+''.join([i for i in self.separated_charset["upper"]]).replace("","|")[1:-1]+"]"
+        lowerregex = "["+''.join([i for i in self.separated_charset["lower"]]).replace("","|")[1:-1]+"]"
+        numregex = "["+''.join([i for i in self.separated_charset["number"]]).replace("","|")[1:-1]+"]"
+        symbolregex = "["+''.join([i for i in self.separated_charset["symbol"]]).replace("","|")[1:-1]+"]"
+        for i,j in enumerate(self.biggerlist()):
+            self.build_regex[i] = ""
+            for char in j.strip():
+                if self.getcase(char) == "U":
+                    self.build_regex[i] += upperregex
+                elif self.getcase(char) == "l":
+                    self.build_regex[i] += lowerregex
+                elif self.getcase(char) == "n":
+                    self.build_regex[i] += numregex
+                elif self.getcase(char) == "@":
+                    self.build_regex[i] += symbolregex
+        for v in self.build_regex.values():
+            regexlist.append(v)
+        regexlist = list(set(regexlist))
+
+        ##Test case
+        for i in regexlist:
+                for z in self.readwords:
+                    q = re.findall(i,z.strip())
+                    if len(q) == 1:
+                        print q," : Matched : ",i
 
     def printgeneralstats(self):
         print "\n\n[+]General Statistics"
@@ -426,5 +483,6 @@ if __name__ == '__main__':
         if argv[4] == "custom":
          EDA.customize()
          print '\n'.join(customizedList)
-    except:
+    except Exception,e:
         pass
+    EDA.random_regex_generator()
