@@ -354,10 +354,16 @@ class Probability():
                 customizedList.append(md5sum.hexdigest())
 
     def biggerlist(self):
-        if len(hosts)>=len(self.readwords):
+        q = raw_input("do you want to join both lists?[Y/N]")
+        if q.lower() == "y":
+            print "[-] Using the merged list for all possible regex matches\n"
+            z = hosts + self.readwords
+            z = list(set(z))
+            return z
+        elif len(hosts)>=len(self.readwords):
             print "[-] Using the generated list, a possibility of a regex match is greater\n"
             return hosts
-        else:
+        elif len(hosts)<=len(self.readwords):
             print "[-] Using the original list, a possibility of a regex match is greater\n"
             return self.readwords
 
@@ -408,7 +414,7 @@ class Probability():
 
         ##Test case
         for i in regexlist:
-                for z in self.readwords:
+                for z in self.readwords: #change to hosts instead of self.readwords if you generate more than 200 urls from urls.txt
                     q = re.findall(i,z.strip())
                     if len(q) == 1:
                         print q," : Matched : ",i
