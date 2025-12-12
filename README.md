@@ -16,12 +16,17 @@ EDAP analyzes wordlists to learn character patterns, frequencies, and positional
 ## Features
 
 - **Variable-length support** - Handles mixed-length wordlists correctly
-- **4 generation modes** - Random, Smart, Pattern, and Regex-based
+- **6 generation modes** - Random, Smart, Pattern, Regex, Markov, and Hybrid
 - **Pattern inference** - Automatically learns and outputs regex patterns
 - **Multiple output formats** - Text, JSON, CSV, JSONL
 - **12 hash algorithms** - MD5, SHA family, SHA-3, BLAKE2, Base64
 - **Reproducible output** - Seed support for deterministic generation
 - **Comprehensive statistics** - Character frequency, position analysis, type distribution
+- **Rule-based mutations** - Hashcat-style transformations (leetspeak, case changes, appends)
+- **Password strength scoring** - Entropy calculation and strength ratings
+- **Flexible filtering** - Filter by length, character types, score, or regex patterns
+- **Statistics export** - Export analysis as JSON, CSV, or detailed position CSV
+- **Batch processing** - Process multiple wordlists at once
 
 ## Installation
 
@@ -113,6 +118,59 @@ hasher = Hasher("sha256")
 hashed = hasher.hash_many(words)
 ```
 
+### Advanced Python API
+
+```python
+from edap import (
+    PatternAnalyzer,
+    MarkovGenerator,
+    create_hybrid_generator,
+    Mutator,
+    Scorer,
+    Filter,
+    FilterConfig,
+    StatsExporter,
+    BatchProcessor,
+)
+
+# Markov chain generation
+analyzer = PatternAnalyzer()
+result = analyzer.analyze_file("wordlist.txt")
+
+markov = MarkovGenerator(result, order=2, seed=42)
+markov.train_on_words(open("wordlist.txt").read().splitlines())
+words = markov.generate(100)
+
+# Hybrid generation
+hybrid = create_hybrid_generator(result, mode="balanced", seed=42)
+words = hybrid.generate(100)
+
+# Apply mutations
+mutator = Mutator()
+expanded = list(mutator.expand("password", rules=["uppercase", "leetspeak", "append_123"]))
+# Returns: ['password', 'PASSWORD', 'p4$$w0rd', 'password123', ...]
+
+# Score password strength
+scorer = Scorer()
+score = scorer.score("MyP@ssw0rd!")
+print(f"Score: {score.score}/100, Rating: {score.rating}, Entropy: {score.entropy:.1f} bits")
+
+# Filter generated words
+config = FilterConfig(min_length=8, require_upper=True, require_digit=True, min_score=50)
+f = Filter(config)
+strong_words = f.filter(words)
+
+# Export statistics
+exporter = StatsExporter(result)
+exporter.to_json_file("stats.json")
+print(exporter.to_summary())
+
+# Batch process multiple files
+batch = BatchProcessor()
+results = batch.process_directory("wordlists/", pattern="*.txt")
+merged = batch.merge_analyses(results)
+```
+
 ## Generation Modes
 
 ### Random Mode (`-m random`)
@@ -147,12 +205,39 @@ Generate strings matching a user-provided regular expression.
 edap wordlist.txt -n 100 -m regex --regex "[A-Z][a-z]{3}[0-9]{2}"
 ```
 
+### Markov Mode (`-m markov`)
+Uses n-gram character transitions learned from the input. Generates strings that "feel" similar to the training data.
+
+```bash
+# Default order (2-gram)
+edap wordlist.txt -n 100 -m markov
+
+# Higher order for more similarity to input
+edap wordlist.txt -n 100 -m markov --markov-order 3
+```
+
+### Hybrid Mode (`-m hybrid`)
+Combines multiple generators with weighted probability.
+
+```bash
+# Balanced: 50% smart + 30% pattern + 20% random
+edap wordlist.txt -n 100 -m hybrid --hybrid-mode balanced
+
+# Strict: 70% pattern + 30% smart
+edap wordlist.txt -n 100 -m hybrid --hybrid-mode strict
+
+# Creative: 50% random + 30% smart + 20% pattern
+edap wordlist.txt -n 100 -m hybrid --hybrid-mode creative
+```
+
 ## CLI Options
 
 ```
-usage: edap [-h] [--version] [-n COUNT] [-m {random,smart,pattern,regex}]
-            [--regex REGEX] [--pattern PATTERN] [-o OUTPUT]
-            [-f {text,json,csv,jsonl}] [--hash ALGORITHM]
+usage: edap [-h] [--version] [-n COUNT]
+            [-m {random,smart,pattern,regex,markov,hybrid}]
+            [--regex REGEX] [--pattern PATTERN]
+            [--markov-order N] [--hybrid-mode {balanced,strict,creative}]
+            [-o OUTPUT] [-f {text,json,csv,jsonl}] [--hash ALGORITHM]
             [--analyze-only] [--show-stats] [--show-patterns]
             [--min-length N] [--max-length N] [--length N]
             [--seed SEED] [--allow-duplicates] [-v] [-q] [--no-banner]
@@ -163,9 +248,11 @@ Arguments:
 
 Options:
   -n, --count N         Number of strings to generate (default: 10)
-  -m, --mode MODE       Generation mode: random, smart, pattern, regex
+  -m, --mode MODE       Generation mode: random, smart, pattern, regex, markov, hybrid
   --regex PATTERN       Regex pattern for regex mode
   --pattern PATTERN     Type pattern for pattern mode (e.g., "UllnnU")
+  --markov-order N      Markov chain n-gram order (default: 2)
+  --hybrid-mode MODE    Hybrid preset: balanced, strict, creative
   -o, --output FILE     Output file (default: stdout)
   -f, --format FORMAT   Output format: text, json, csv, jsonl
   --hash ALGORITHM      Apply hash: md5, sha1, sha256, sha512, sha3_256,
@@ -287,9 +374,17 @@ edap/
 │   ├── random_gen.py    # RandomGenerator
 │   ├── smart.py         # SmartGenerator
 │   ├── pattern.py       # PatternGenerator
-│   └── regex_gen.py     # RegexGenerator
+│   ├── regex_gen.py     # RegexGenerator
+│   ├── markov.py        # MarkovGenerator (n-gram chains)
+│   └── hybrid.py        # HybridGenerator (multi-strategy)
 ├── regex_builder.py     # Regex pattern inference
 ├── exporters.py         # Output formatting and hashing
+├── mutator.py           # Rule-based mutations
+├── scorer.py            # Password strength scoring
+├── filters.py           # Output filtering
+├── stats_exporter.py    # Statistics export (JSON/CSV)
+├── batch.py             # Batch file processing
+├── progress.py          # CLI progress bar
 ├── exceptions.py        # Custom exceptions
 ├── cli.py               # Command-line interface
 ├── ui.py                # Streamlit web UI
@@ -299,7 +394,8 @@ tests/
 ├── test_generators.py
 ├── test_exporters.py
 ├── test_models.py
-└── test_cli.py
+├── test_cli.py
+└── test_new_features.py # Tests for v2.1.0 features
 ```
 
 ## License
