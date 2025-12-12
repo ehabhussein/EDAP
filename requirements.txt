@@ -1,0 +1,11 @@
+# Core dependencies (none - stdlib only)
+
+# Optional: Web UI
+# streamlit>=1.28.0
+# pandas>=2.0.0
+
+# Optional: Development
+# pytest>=7.0
+# pytest-cov>=4.0
+# mypy>=1.0
+# ruff>=0.1.0
