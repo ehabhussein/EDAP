@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edap"
+version = "2.0.0"
+description = "Efficient Dynamic Algorithms for Probability - Pattern analysis and string generation"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Ehab Hussein", email = "ehab.hussein@ioactive.co.uk"}
+]
+keywords = ["password", "pattern", "analysis", "generation", "security", "wordlist"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Text Processing",
+    "Typing :: Typed",
+]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "mypy>=1.0",
+    "ruff>=0.1.0",
+]
+ui = [
+    "streamlit>=1.28.0",
+    "pandas>=2.0.0",
+]
+all = [
+    "edap[dev,ui]",
+]
+
+[project.scripts]
+edap = "edap.cli:entry_point"
+edap-ui = "edap.ui_runner:main"
+
+[project.urls]
+Homepage = "https://github.com/ehabhussein/EDAP"
+Repository = "https://github.com/ehabhussein/EDAP"
+Issues = "https://github.com/ehabhussein/EDAP/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["edap*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["E501"]
