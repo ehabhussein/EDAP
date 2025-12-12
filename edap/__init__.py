@@ -1,9 +1,8 @@
 """
-EDAP - Efficient Dynamic Algorithms for Probability
-A password/string pattern analysis and generation tool.
+EDAP - Empirical Distribution Analysis for Patterns
+A pattern analysis and string generation tool.
 
 Author: Ehab Hussein
-Modernized: 2025
 """
 
 __version__ = "2.0.0"

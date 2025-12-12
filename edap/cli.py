@@ -2,8 +2,8 @@
 """
 EDAP Command Line Interface.
 
-Efficient Dynamic Algorithms for Probability
-A password/string pattern analysis and generation tool.
+Empirical Distribution Analysis for Patterns
+A pattern analysis and string generation tool.
 """
 
 import argparse
@@ -35,7 +35,7 @@ BANNER = r"""
 |  ____/ ___) _ \|  _ \(____ |  _ \| | || (_   _) | | |
 | |   | |  | |_| | |_) ) ___ | |_) ) | || | | |_| |_| |
 |_|   |_|   \___/|____/\_____|____/|_|\_)_|  \__)\__  |
-           Efficient Dynamic Algorithms         (____/
+      Empirical Distribution Analysis         (____/
                     Ehab Hussein
 """
 
@@ -59,7 +59,7 @@ def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
     parser = argparse.ArgumentParser(
         prog='edap',
-        description='EDAP - Efficient Dynamic Algorithms for Probability',
+        description='EDAP - Empirical Distribution Analysis for Patterns',
         epilog='Example: edap wordlist.txt -n 100 -m smart -o output.txt',
     )
 

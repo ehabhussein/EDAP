@@ -1,4 +1,4 @@
-# EDAP - Efficient Dynamic Algorithms for Probability
+# EDAP - Empirical Distribution Analysis for Patterns
 
 A password/string pattern analysis and generation tool for security research.
 
