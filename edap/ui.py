@@ -17,11 +17,22 @@ from edap import (
     PatternGenerator,
     RegexGenerator,
     RegexInferenceGenerator,
+    MarkovGenerator,
+    HybridGenerator,
+    create_hybrid_generator,
     RegexBuilder,
     Hasher,
     HashAlgorithm,
     ResultExporter,
     OutputFormat,
+    Mutator,
+    RULE_PRESETS,
+    Scorer,
+    Filter,
+    FilterConfig,
+    create_filter,
+    FILTER_PRESETS,
+    StatsExporter,
 )
 
 
@@ -90,10 +101,10 @@ def render_header():
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown('<p class="main-header">EDAP</p>', unsafe_allow_html=True)
-        st.markdown('<p class="sub-header">Efficient Dynamic Algorithms for Probability</p>', unsafe_allow_html=True)
+        st.markdown('<p class="sub-header">Empirical Distribution Analysis for Patterns</p>', unsafe_allow_html=True)
     with col2:
         st.markdown("**Author:** Ehab Hussein")
-        st.markdown("**Version:** 2.0.0")
+        st.markdown("**Version:** 2.1.0")
 
 
 def render_sidebar():
@@ -205,12 +216,14 @@ def render_generation_options():
     with col1:
         mode = st.selectbox(
             "Generation Mode",
-            ["smart", "random", "pattern", "regex"],
+            ["smart", "random", "pattern", "regex", "markov", "hybrid"],
             help="""
             - **smart**: Uses character co-occurrence patterns
             - **random**: Random selection from position charset
             - **pattern**: Follows character type patterns (Upper/lower/digit/symbol)
             - **regex**: Generate from custom regex pattern
+            - **markov**: Uses n-gram transitions (learns sequences)
+            - **hybrid**: Combines multiple generators
             """
         )
 
@@ -251,6 +264,26 @@ def render_generation_options():
             help="U=Upper, l=lower, n=digit, @=symbol. Leave empty to auto-select."
         )
 
+    elif mode == "markov":
+        markov_order = st.slider(
+            "Markov Order (n-gram size)",
+            min_value=1,
+            max_value=4,
+            value=2,
+            help="Higher = more similar to training data, lower = more random"
+        )
+
+    elif mode == "hybrid":
+        hybrid_mode = st.selectbox(
+            "Hybrid Preset",
+            ["balanced", "strict", "creative"],
+            help="""
+            - **balanced**: 50% smart + 30% pattern + 20% random
+            - **strict**: 70% pattern + 30% smart
+            - **creative**: 50% random + 30% smart + 20% pattern
+            """
+        )
+
     # Advanced options
     with st.expander("Advanced Options"):
         col1, col2 = st.columns(2)
@@ -277,6 +310,8 @@ def render_generation_options():
         'type_pattern': type_pattern if type_pattern else None,
         'allow_duplicates': allow_duplicates,
         'use_learned': use_learned,
+        'markov_order': markov_order if mode == 'markov' else 2,
+        'hybrid_mode': hybrid_mode if mode == 'hybrid' else 'balanced',
     }
 
 
@@ -335,6 +370,22 @@ def run_generation(result, options: dict) -> list:
             seed=seed,
             exclude_original=exclude_original,
             use_learned_charset=options['use_learned'],
+        )
+    elif mode == 'markov':
+        gen = MarkovGenerator(
+            result,
+            seed=seed,
+            exclude_original=exclude_original,
+            order=options.get('markov_order', 2),
+        )
+        # Train on original words for better Markov chains
+        gen.train_on_words(st.session_state.input_words)
+    elif mode == 'hybrid':
+        gen = create_hybrid_generator(
+            result,
+            mode=options.get('hybrid_mode', 'balanced'),
+            seed=seed,
+            exclude_original=exclude_original,
         )
     else:
         raise ValueError(f"Unknown mode: {mode}")
@@ -439,7 +490,169 @@ def render_analysis_results(result):
             st.info("No patterns found")
 
 
-def render_generated_results(words: list, gen_options: dict, export_options: dict):
+def render_mutation_options():
+    """Render mutation options."""
+    st.subheader("🔄 Mutation Options")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        enable_mutations = st.checkbox(
+            "Apply mutations to generated words",
+            value=False,
+            help="Apply hashcat-style rule transformations"
+        )
+
+    with col2:
+        mutation_preset = st.selectbox(
+            "Mutation Preset",
+            ["basic", "leet", "common", "full", "custom"],
+            disabled=not enable_mutations,
+            help="""
+            - **basic**: lowercase, uppercase, capitalize, reverse
+            - **leet**: leetspeak transformations
+            - **common**: common number/symbol appends
+            - **full**: all available rules
+            - **custom**: select individual rules
+            """
+        )
+
+    custom_rules = []
+    if enable_mutations and mutation_preset == "custom":
+        mutator = Mutator()
+        all_rules = mutator.list_rules()
+        custom_rules = st.multiselect(
+            "Select rules to apply",
+            options=all_rules,
+            default=["lowercase", "uppercase", "capitalize"],
+        )
+
+    return {
+        'enabled': enable_mutations,
+        'preset': mutation_preset,
+        'custom_rules': custom_rules,
+    }
+
+
+def render_filter_options():
+    """Render filter options for generated words."""
+    st.subheader("🔍 Filter Options")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        enable_filter = st.checkbox(
+            "Filter generated words",
+            value=False,
+            help="Apply filters to generated output"
+        )
+
+    with col2:
+        filter_preset = st.selectbox(
+            "Filter Preset",
+            ["none", "strong", "complex", "custom"],
+            disabled=not enable_filter,
+            help="""
+            - **none**: No filtering
+            - **strong**: min 12 chars, 3 char types, score >= 60
+            - **complex**: min 16 chars, all char types, score >= 80
+            - **custom**: Configure your own filters
+            """
+        )
+
+    filter_config = {}
+    if enable_filter and filter_preset == "custom":
+        with st.expander("Custom Filter Settings", expanded=True):
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                filter_config['min_length'] = st.number_input(
+                    "Min Length", min_value=0, max_value=256, value=8
+                )
+                filter_config['max_length'] = st.number_input(
+                    "Max Length", min_value=0, max_value=256, value=0,
+                    help="0 = no limit"
+                )
+
+            with col2:
+                filter_config['require_upper'] = st.checkbox("Require uppercase")
+                filter_config['require_lower'] = st.checkbox("Require lowercase")
+                filter_config['require_digit'] = st.checkbox("Require digit")
+                filter_config['require_symbol'] = st.checkbox("Require symbol")
+
+            with col3:
+                filter_config['min_score'] = st.slider(
+                    "Min Strength Score", 0, 100, 0,
+                    help="Minimum password strength score"
+                )
+                filter_config['min_char_types'] = st.slider(
+                    "Min Char Types", 1, 4, 1,
+                    help="Minimum different character types"
+                )
+
+    return {
+        'enabled': enable_filter,
+        'preset': filter_preset,
+        'config': filter_config,
+    }
+
+
+def apply_mutations(words: list, mutation_options: dict) -> list:
+    """Apply mutations to generated words."""
+    if not mutation_options['enabled']:
+        return words
+
+    mutator = Mutator()
+    preset = mutation_options['preset']
+
+    if preset == "custom":
+        rules = mutation_options['custom_rules']
+    elif preset in RULE_PRESETS:
+        rules = RULE_PRESETS[preset]
+    else:
+        rules = RULE_PRESETS.get('basic', [])
+
+    # Expand each word with the selected rules
+    mutated = set()
+    for word in words:
+        mutated.add(word)  # Keep original
+        for variant in mutator.expand(word, rules=rules):
+            mutated.add(variant)
+
+    return list(mutated)
+
+
+def apply_filters(words: list, filter_options: dict) -> list:
+    """Apply filters to generated words."""
+    if not filter_options['enabled']:
+        return words
+
+    preset = filter_options['preset']
+
+    if preset == "none":
+        return words
+    elif preset == "custom":
+        config = filter_options['config']
+        f = create_filter(
+            min_length=config.get('min_length', 0) or None,
+            max_length=config.get('max_length', 0) or None,
+            require_upper=config.get('require_upper', False),
+            require_lower=config.get('require_lower', False),
+            require_digit=config.get('require_digit', False),
+            require_symbol=config.get('require_symbol', False),
+            min_score=config.get('min_score', 0) or None,
+            min_char_types=config.get('min_char_types', 1),
+        )
+    elif preset in FILTER_PRESETS:
+        f = Filter(FILTER_PRESETS[preset])
+    else:
+        return words
+
+    return f.filter(words)
+
+
+def render_generated_results(words: list, gen_options: dict, export_options: dict,
+                             mutation_options: dict = None, filter_options: dict = None):
     """Render generated results."""
     st.subheader(f"✨ Generated Strings ({len(words)})")
 
@@ -447,10 +660,22 @@ def render_generated_results(words: list, gen_options: dict, export_options: dic
         st.warning("No strings generated. Try adjusting your options.")
         return
 
+    # Apply mutations if enabled
+    if mutation_options and mutation_options.get('enabled'):
+        original_count = len(words)
+        words = apply_mutations(words, mutation_options)
+        st.info(f"Mutations applied: {original_count} → {len(words)} words")
+
+    # Apply filters if enabled
+    if filter_options and filter_options.get('enabled'):
+        pre_filter_count = len(words)
+        words = apply_filters(words, filter_options)
+        st.info(f"Filtered: {pre_filter_count} → {len(words)} words")
+
     # Display options
     display_mode = st.radio(
         "Display Mode",
-        ["Grid", "List", "Table"],
+        ["Grid", "List", "Table", "Scored Table"],
         horizontal=True,
     )
 
@@ -469,7 +694,7 @@ def render_generated_results(words: list, gen_options: dict, export_options: dic
             height=300,
         )
 
-    else:  # Table
+    elif display_mode == "Table":
         # Table with weights
         if st.session_state.analysis_result:
             result = st.session_state.analysis_result
@@ -486,6 +711,35 @@ def render_generated_results(words: list, gen_options: dict, export_options: dic
 
             df = pd.DataFrame(table_data)
             st.dataframe(df, hide_index=True)
+
+    else:  # Scored Table
+        # Table with password strength scores
+        scorer = Scorer()
+        table_data = []
+
+        for word in words[:500]:
+            score_result = scorer.score(word)
+            table_data.append({
+                'Word': word,
+                'Length': len(word),
+                'Score': round(score_result.score, 1),
+                'Rating': score_result.rating,
+                'Entropy': round(score_result.entropy, 1),
+                'Upper': '✓' if score_result.has_upper else '',
+                'Lower': '✓' if score_result.has_lower else '',
+                'Digit': '✓' if score_result.has_digit else '',
+                'Symbol': '✓' if score_result.has_symbol else '',
+            })
+
+        df = pd.DataFrame(table_data)
+
+        # Color-code by rating
+        st.dataframe(df, hide_index=True)
+
+        # Show score distribution
+        if len(table_data) > 1:
+            avg_score = sum(d['Score'] for d in table_data) / len(table_data)
+            st.metric("Average Strength Score", f"{avg_score:.1f}/100")
 
     # Export section
     st.divider()
@@ -522,6 +776,49 @@ def render_generated_results(words: list, gen_options: dict, export_options: dic
     with col2:
         if hash_algo:
             st.info(f"Output hashed with {hash_algo.upper()}")
+
+
+def render_stats_export(result):
+    """Render statistics export section."""
+    st.subheader("📈 Export Statistics")
+
+    exporter = StatsExporter(result)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        # JSON export
+        json_data = exporter.to_json()
+        st.download_button(
+            "📥 Download JSON",
+            data=json_data,
+            file_name="edap_stats.json",
+            mime="application/json",
+        )
+
+    with col2:
+        # CSV export
+        csv_data = exporter.to_csv()
+        st.download_button(
+            "📥 Download CSV",
+            data=csv_data,
+            file_name="edap_stats.csv",
+            mime="text/csv",
+        )
+
+    with col3:
+        # Position CSV export
+        pos_csv = exporter.to_position_csv()
+        st.download_button(
+            "📥 Download Position CSV",
+            data=pos_csv,
+            file_name="edap_position_stats.csv",
+            mime="text/csv",
+        )
+
+    # Show summary
+    with st.expander("View Summary"):
+        st.text(exporter.to_summary())
 
 
 def render_regex_inference(result):
@@ -593,11 +890,22 @@ def main():
             - **Random**: Random selection from observed characters at each position
             - **Pattern**: Follows character type patterns (Upper/lower/digit/symbol)
             - **Regex**: Generate strings matching a custom regex pattern
+            - **Markov**: Uses n-gram transitions learned from input (generates similar strings)
+            - **Hybrid**: Combines multiple generators with weighted probability
+
+            **Post-processing:**
+            - **Mutations**: Apply hashcat-style transformations (leetspeak, case changes, appends)
+            - **Filters**: Filter by length, character types, strength score, or regex patterns
+
+            **Analysis Export:**
+            - Export statistics as JSON, CSV, or position-level CSV
+            - View detailed summary of character distributions
 
             **Use Cases:**
             - Security research & password analysis
             - Generating targeted wordlists
             - Creating test data matching specific formats
+            - Password strength analysis
             """)
         return
 
@@ -637,6 +945,13 @@ def main():
 
         # Generation section
         gen_options = render_generation_options()
+
+        # Mutation and filter options in expander
+        with st.expander("🔧 Post-processing Options", expanded=False):
+            mutation_options = render_mutation_options()
+            st.divider()
+            filter_options = render_filter_options()
+
         export_options = render_export_options()
 
         col1, col2 = st.columns([1, 4])
@@ -648,6 +963,8 @@ def main():
                 try:
                     generated = run_generation(result, gen_options)
                     st.session_state.generated_words = generated
+                    st.session_state.mutation_options = mutation_options
+                    st.session_state.filter_options = filter_options
                     st.success(f"Generated {len(generated)} strings!")
                 except Exception as e:
                     st.error(f"Generation error: {str(e)}")
@@ -655,13 +972,22 @@ def main():
 
         # Show generated words
         if st.session_state.generated_words:
+            # Use stored options for consistency
+            m_opts = st.session_state.get('mutation_options', mutation_options)
+            f_opts = st.session_state.get('filter_options', filter_options)
             render_generated_results(
                 st.session_state.generated_words,
                 gen_options,
                 export_options,
+                m_opts,
+                f_opts,
             )
 
         st.divider()
+
+        # Stats export section
+        with st.expander("📈 Export Analysis Statistics"):
+            render_stats_export(result)
 
         # Regex inference section
         with st.expander("🔍 Infer Regex Patterns from Data"):
